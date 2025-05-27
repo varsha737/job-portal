@@ -1,0 +1,94 @@
+.sidebar {
+    height: 100vh !important;
+    border-radius: 5px;
+    background-color: #2e2300;
+    box-shadow: 0 0 2px gray;
+    color: white;
+}
+
+.logo h6 {
+    font-size: 1.5rem;
+    text-align: center;
+    margin: 20px 0px;
+}
+
+/* User Info Styles */
+.user-info {
+    padding: 1rem;
+    text-align: center;
+}
+
+.user-welcome {
+    margin-bottom: 1rem;
+}
+
+.user-welcome i {
+    font-size: 2.5rem;
+    color: #fbbf24;
+    margin-bottom: 0.5rem;
+}
+
+.user-welcome h5 {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin: 0.5rem 0;
+}
+
+.user-welcome h4 {
+    font-size: 1.2rem;
+    color: white;
+    margin: 0;
+    font-weight: 600;
+}
+
+.user-role {
+    margin: 1rem 0;
+}
+
+.role-badge {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.role-badge i {
+    font-size: 1rem;
+}
+
+/* Menu Styles */
+.menu-item {
+    margin-top: 30px;
+}
+
+.menu-item a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+
+.menu-item i {
+    font-size: 1.2rem;
+    margin: 0 15px;
+    color: white;
+}
+
+.active {
+    background-color: white;
+    padding: 10px;
+}
+
+.active a,
+.active i {
+    color: #2e2300;
+}
+
+/* Divider Styles */
+.sidebar hr {
+    margin: 1rem 0;
+    border-color: rgba(255, 255, 255, 0.1);
+}

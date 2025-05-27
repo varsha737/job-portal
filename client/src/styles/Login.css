@@ -1,0 +1,131 @@
+/* Login.css */
+/* 
+.form-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #eef2f5;
+    padding: 20px;
+}
+
+.card {
+    width: 320px;
+    /* Smaller width 
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+}
+
+.card img {
+    height:px;
+    width: 320px;
+    object-fit: contain;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card p {
+    font-size: 14px;
+    color: #555;
+}
+
+.card p a {
+    color: #4a90e2;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.card p a:hover {
+    text-decoration: underline;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #4a90e2;
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 4px;
+    transition: background 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: #256dca;
+} */
+
+/* You can add any input styles inside InputFrom or globally */
+
+.form-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 20px;
+    background: linear-gradient(to right, #f0f2f5, #d9e4f5);
+    flex-wrap: wrap;
+}
+
+.form-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.login-card {
+    background-color: #ffffff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-card img {
+    display: block;
+    margin: 0 auto 20px;
+    height: 100px;
+    width: auto;
+}
+
+.login-card button {
+    width: 100%;
+    margin-top: 15px;
+}
+
+.login-card p {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* NEW: Info Box Styles */
+.info-box {
+    flex: 1;
+    max-width: 400px;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.info-box img {
+    margin-top: 20px;
+    width: 100%;
+    border-radius: 10px;
+    object-fit: cover;
+}
