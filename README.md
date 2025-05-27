@@ -1,6 +1,6 @@
 # Job Portal Application 🚀
 
-![Job Portal Banner](https://user-images.githubusercontent.com/12345678/job-portal-banner.png)
+![Job Portal Banner]([http://rgitech.weebly.com/uploads/1/0/1/4/101493456/published/job-portal-software-script_1.png?1491821976])
 
 A full-stack job portal application built with the MERN stack (MongoDB, Express.js, React.js, Node.js) that connects job seekers with recruiters.
 
