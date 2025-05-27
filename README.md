@@ -114,9 +114,6 @@ The application is fully responsive and works seamlessly on:
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -126,7 +123,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-Your Name - [Ritu Varsha](https://twitter.com/yourtwitter) - email@example.com
+Your Name - [Ritu Varsha] - rituvarsha7370@gmail.com
 
 Project Link: [https://github.com/varsha737/job-portal]
 
