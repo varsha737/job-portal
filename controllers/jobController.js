@@ -305,4 +305,225 @@ export const getRecruiterJobs = async (req, res, next) => {
   }
 };
 
+// ======== GET RECRUITER ANALYTICS ========
+export const getRecruiterAnalytics = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+
+    // Get all jobs posted by the recruiter
+    const jobs = await jobsModel.find({ createdBy: userId });
+
+    // Calculate analytics
+    const analytics = {
+      totalJobs: jobs.length,
+      activeJobs: jobs.filter(job => job.status === 'Open').length,
+      totalApplications: jobs.reduce((acc, job) => acc + (job.applicants?.length || 0), 0),
+      applicationsByStatus: [
+        { 
+          name: 'Pending', 
+          value: jobs.reduce((acc, job) => 
+            acc + (job.applicants?.filter(app => app.status === 'Pending').length || 0), 0
+          )
+        },
+        { 
+          name: 'Shortlisted', 
+          value: jobs.reduce((acc, job) => 
+            acc + (job.applicants?.filter(app => app.status === 'Shortlisted').length || 0), 0
+          )
+        },
+        { 
+          name: 'Interview', 
+          value: jobs.reduce((acc, job) => 
+            acc + (job.applicants?.filter(app => app.status === 'Interview').length || 0), 0
+          )
+        },
+        { 
+          name: 'Rejected', 
+          value: jobs.reduce((acc, job) => 
+            acc + (job.applicants?.filter(app => app.status === 'Reject').length || 0), 0
+          )
+        }
+      ],
+      recentApplications: jobs.flatMap(job => 
+        (job.applicants || []).map(app => ({
+          jobId: job._id,
+          jobTitle: job.position,
+          company: job.company,
+          applicantId: app.userId,
+          status: app.status,
+          appliedAt: app.appliedAt
+        }))
+      ).sort((a, b) => b.appliedAt - a.appliedAt).slice(0, 10)
+    };
+
+    res.status(200).json({
+      success: true,
+      analytics
+    });
+  } catch (error) {
+    console.error('Error in getRecruiterAnalytics:', error);
+    next(error);
+  }
+};
+
+//===== SCHEDULE INTERVIEW =======
+export const scheduleInterview = async (req, res) => {
+  try {
+    const { jobId, applicantId, date, type, location, notes, meetingLink } = req.body;
+    
+    // Find the job and update the applicant's status
+    const job = await jobsModel.findById(jobId);
+    
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found'
+      });
+    }
+
+    // Find the applicant in the job's applicants array
+    const applicantIndex = job.applicants.findIndex(
+      app => app.userId.toString() === applicantId
+    );
+
+    if (applicantIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Applicant not found'
+      });
+    }
+
+    // Update the applicant's status and add interview details
+    job.applicants[applicantIndex] = {
+      ...job.applicants[applicantIndex],
+      status: 'Interview',
+      interviewDetails: {
+        date,
+        type,
+        location,
+        notes,
+        meetingLink
+      }
+    };
+
+    await job.save();
+
+    // Send email notification (you can implement this later)
+
+    res.status(200).json({
+      success: true,
+      message: 'Interview scheduled successfully'
+    });
+  } catch (error) {
+    console.error('Error in scheduleInterview:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error while scheduling interview'
+    });
+  }
+};
+
+//===== UPDATE JOB STATUS =======
+export const updateJobStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid Job ID: ${id}`
+      });
+    }
+
+    // Find and update job
+    const job = await jobsModel.findById(id);
+    
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: `No job found with ID ${id}`
+      });
+    }
+
+    // Check if user is authorized (job creator)
+    if (job.createdBy.toString() !== req.user.userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this job'
+      });
+    }
+
+    // Update status
+    job.status = status;
+    await job.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Job status updated to ${status}`,
+      job
+    });
+
+  } catch (error) {
+    console.error('Error in updateJobStatus:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error while updating job status',
+      error: error.message
+    });
+  }
+};
+
+//===== GET SINGLE JOB =======
+export const getJobById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid Job ID: ${id}`
+      });
+    }
+
+    // Find job and populate applicant details
+    const job = await jobsModel.findById(id)
+      .populate('applicants.userId', 'name email');
+    
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: `No job found with ID ${id}`
+      });
+    }
+
+    // Add hasApplied field if user is authenticated
+    let jobWithApplyStatus = job;
+    if (req.user) {
+      const hasApplied = job.applicants?.some(applicant => 
+        applicant.userId._id.toString() === req.user.userId
+      );
+      jobWithApplyStatus = {
+        ...job.toObject(),
+        hasApplied
+      };
+    }
+
+    res.status(200).json({
+      success: true,
+      job: jobWithApplyStatus
+    });
+
+  } catch (error) {
+    console.error('Error in getJobById:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error while fetching job details',
+      error: error.message
+    });
+  }
+};
+
 

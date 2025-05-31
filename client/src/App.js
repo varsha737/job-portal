@@ -17,6 +17,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme/theme';
 import ForgotPassword from "./pages/ForgotPassword";
+import JobView from './pages/JobView';
 
 function App() {
   return ( 
@@ -36,6 +37,7 @@ function App() {
         <Route path="/update-job/:id" element={<UpdateJob />} />
         <Route path="/update-profile" element={<UpdateProfile />} />
         <Route path="/user/profile" element={<Profile />} />
+        <Route path="/job/:id" element={<JobView />} />
       </Routes>
     </ThemeProvider>
   );
