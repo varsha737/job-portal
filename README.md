@@ -1,6 +1,4 @@
-# Job Portal Application 🚀
-
-![Job Portal Banner](https://user-images.githubusercontent.com/12345678/job-portal-banner.png)
+# Job Portal 🚀
 
 A full-stack job portal application built with the MERN stack (MongoDB, Express.js, React.js, Node.js) that connects job seekers with recruiters.
 
@@ -10,17 +8,14 @@ A full-stack job portal application built with the MERN stack (MongoDB, Express.
 - User registration and authentication
 - Create and update professional profile
 - Browse and search job listings
-- Apply to jobs with resume and cover letter
+- Apply to jobs with resume 
 - Phone number verification (optional)
 - Password recovery with OTP
-- Track application status
 
 ### For Recruiters 👔
 - Post and manage job listings
 - Review job applications
 - Company profile management
-- Applicant tracking
-- Dashboard with analytics
 
 ## 🛠️ Tech Stack
 
@@ -43,7 +38,7 @@ A full-stack job portal application built with the MERN stack (MongoDB, Express.
 ### Prerequisites
 - Node.js (v14 or higher)
 - MongoDB
-- npm or yarn
+- npm 
 
 ### Installation
 
@@ -85,8 +80,6 @@ The application will start running at:
 
 The application is fully responsive and works seamlessly on:
 - Desktop computers
-- Tablets
-- Mobile phones
 
 ## 🔒 Security Features
 
@@ -94,14 +87,12 @@ The application is fully responsive and works seamlessly on:
 - Password hashing
 - Protected routes
 - Input validation
-- XSS protection
 - CORS enabled
 
 ## 🎯 Future Enhancements
 
 - [ ] Advanced search filters
 - [ ] Email notifications
-- [ ] Real-time chat
 - [ ] Resume builder
 - [ ] Interview scheduling
 - [ ] Analytics dashboard
@@ -119,7 +110,6 @@ The application is fully responsive and works seamlessly on:
 
 - Material-UI for the beautiful components
 - MongoDB Atlas for database hosting
-- All the contributors who helped in building this project
 
 ## 📞 Contact
 
