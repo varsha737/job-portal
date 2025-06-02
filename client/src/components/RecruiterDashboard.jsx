@@ -15,7 +15,6 @@ const RecruiterDashboard = () => {
         workLocation: 'Mumbai',
         status: 'Open'
     });
-
     // Fetch recruiter's jobs
     const fetchJobs = async () => {
         try {

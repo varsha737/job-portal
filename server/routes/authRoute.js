@@ -1,7 +1,13 @@
-const express = require("express");
-const { registerController, loginController, sendOTP, verifyOTP, resetPassword } = require("../controllers/authController");
+import express from "express";
+import {
+  registerController,
+  loginController,
+  sendOTP,
+  verifyOTP,
+  resetPassword,
+} from "../controllers/authController.js";
 
-//router object
+// router object
 const router = express.Router();
 
 // routes
@@ -16,4 +22,4 @@ router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
 router.post("/reset-password", resetPassword);
 
-module.exports = router; 
+export default router;
