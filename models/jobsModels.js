@@ -26,6 +26,9 @@ const jobSchema = new mongoose.Schema(
       default: "Mumbai",
       required: [true, "work location is required"],
     },
+    schedule: {
+      type: String,
+    },
     createdBy: {
       type: mongoose.Types.ObjectId,
       ref: "User",
@@ -44,6 +47,16 @@ const jobSchema = new mongoose.Schema(
       appliedAt: {
         type: Date,
         default: Date.now
+      },
+      interviewDetails: {
+        date: Date,
+        type: {
+          type: String,
+          enum: ["online", "in-person", "phone"]
+        },
+        location: String,
+        notes: String,
+        meetingLink: String
       }
     }]
   },
