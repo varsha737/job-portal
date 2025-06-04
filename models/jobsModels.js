@@ -26,6 +26,9 @@ const jobSchema = new mongoose.Schema(
       default: "Mumbai",
       required: [true, "work location is required"],
     },
+    schedule: {
+      type: String,
+    },
     createdBy: {
       type: mongoose.Types.ObjectId,
       ref: "User",
