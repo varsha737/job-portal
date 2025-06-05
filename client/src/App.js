@@ -19,6 +19,8 @@ import theme from './theme/theme';
 import ForgotPassword from "./pages/ForgotPassword";
 import JobView from './pages/JobView';
 import Footer from './components/Footer';
+import PrivateRoute from './components/routes/PrivateRoute';
+import PublicRoute from './components/routes/PublicRoute';
 
 function App() {
   return ( 
@@ -29,18 +31,58 @@ function App() {
         <Routes>
           <Route path="/job-portal" element={<Navigate to="/" replace />} />
           <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
+          <Route path="/login" element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } />
+          <Route path="/register" element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          } />
+          <Route path="/forgot-password" element={
+            <PublicRoute>
+              <ForgotPassword />
+            </PublicRoute>
+          } />
+          <Route path="/dashboard" element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/recruiter-dashboard" element={
+            <PrivateRoute>
+              <RecruiterDashboard />
+            </PrivateRoute>
+          } />
           <Route path="/spinner" element={<Spinner />} />
           <Route path="*" element={<NotFound />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/update-job/:id" element={<UpdateJob />} />
-          <Route path="/update-profile" element={<UpdateProfile />} />
-          <Route path="/user/profile" element={<Profile />} />
-          <Route path="/job/:id" element={<JobView />} />
+          <Route path="/jobs" element={
+            <PrivateRoute>
+              <Jobs />
+            </PrivateRoute>
+          } />
+          <Route path="/update-job/:id" element={
+            <PrivateRoute>
+              <UpdateJob />
+            </PrivateRoute>
+          } />
+          <Route path="/update-profile" element={
+            <PrivateRoute>
+              <UpdateProfile />
+            </PrivateRoute>
+          } />
+          <Route path="/user/profile" element={
+            <PrivateRoute>
+              <Profile />
+            </PrivateRoute>
+          } />
+          <Route path="/job/:id" element={
+            <PrivateRoute>
+              <JobView />
+            </PrivateRoute>
+          } />
         </Routes>
       </div>
       <Footer />

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import axios from '../api/axios';
 import InputFrom from '../components/InputFrom';
 import { hideLoading, showLoading } from '../redux/features/alertSlice';
+import { setUser } from '../redux/features/auth/authSlice';
 import Spinner from '../components/Spinner';
 import { toast } from 'react-toastify';
 import "../styles/Login.css";
@@ -19,14 +20,13 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log('Attempting login with:', { email });
       dispatch(showLoading());
       const { data } = await axios.post("/auth/login", { email, password });
-      console.log('Login response:', data);
       dispatch(hideLoading());
 
       if (data.success) {
         localStorage.setItem("token", data.token);
+        dispatch(setUser(data.user));
         toast.success("Login Successfully");
         if (data.user.role === 'recruiter') {
           navigate('/recruiter-dashboard');
@@ -34,7 +34,6 @@ const Login = () => {
           navigate('/dashboard');
         }
       } else {
-        console.log('Login failed:', data);
         toast.error("Login failed. Please try again.");
       }
     } catch (error) {
