@@ -1,95 +1,90 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout/Layout';
 import ResumeBuilder from '../components/Resume/ResumeBuilder';
-import JobFilters from '../components/JobFilters/JobFilters';
 import '../styles/Dashboard.css';
 import axios from '../api/axios';
 import { toast } from 'react-toastify';
 import Spinner from '../components/Spinner';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({
-    totalJobs: 0,
-    interviews: 0,
-    pending: 0,
-    rejected: 0,
-    hired: 0
-  });
+  const navigate = useNavigate();
+  const { user } = useSelector(state => state.auth);
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
-  const [uniqueLocations, setUniqueLocations] = useState([]);
-  const [uniqueTypes, setUniqueTypes] = useState([]);
-  const [filters, setFilters] = useState({
-    search: '',
-    status: 'all',
-    workType: 'all',
-    workLocation: 'all'
-  });
+  const [appliedJobs, setAppliedJobs] = useState([]);
+  const [resumeData, setResumeData] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get('/job/job-stats');
-        if (response.data.success) {
-          setStats(response.data.stats);
-        } else {
-          toast.error('Failed to fetch job stats');
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
         }
+
+        // Fetch jobs
+        const jobsResponse = await axios.get('/job/jobs', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (jobsResponse.data.success) {
+          setJobs(jobsResponse.data.jobs);
+        }
+
+        // Fetch applied jobs and resume for job seekers
+        if (user?.role === 'jobseeker') {
+          const appliedResponse = await axios.get('/job/applied-jobs', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (appliedResponse.data.success) {
+            setAppliedJobs(appliedResponse.data.jobs || []);
+          }
+
+          // Fetch resume data
+          const resumeResponse = await axios.get('/resume/get-resume', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (resumeResponse.data.success) {
+            setResumeData(resumeResponse.data.resume);
+            setPreviewUrl(resumeResponse.data.previewUrl);
+          }
+        }
+
       } catch (error) {
-        console.error('Error fetching stats:', error);
-        toast.error(error.response?.data?.message || 'Error fetching job stats');
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchJobs = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        // Build query string from filters
-        const queryParams = new URLSearchParams();
-        if (filters.search) queryParams.append('search', filters.search);
-        if (filters.status !== 'all') queryParams.append('status', filters.status);
-        if (filters.workType !== 'all') queryParams.append('workType', filters.workType);
-        if (filters.workLocation !== 'all') queryParams.append('workLocation', filters.workLocation);
+    fetchData();
+  }, [navigate, user?.role]);
 
-        const res = await axios.get(`/api/jobs/get-job?${queryParams.toString()}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setJobs(res.data.jobs);
-        setUniqueLocations(res.data.uniqueLocations);
-        setUniqueTypes(res.data.uniqueTypes);
-      } catch (error) {
-        console.error('Error fetching jobs', error);
-      }
-    };
-
-    fetchStats();
-    fetchJobs();
-  }, [filters]); // Re-fetch when filters change
-
-  const handleSaveJob = async (jobId) => {
+  const handleApply = async (jobId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/jobs/update-job/${jobId}`, 
-        { status: 'Pending' },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      // Refresh stats and jobs after saving
-      const statsRes = await axios.get('/api/jobs/job-stats', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      if (!token) {
+        toast.error('Please login to apply for jobs');
+        navigate('/login');
+        return;
+      }
+
+      const response = await axios.post(`/job/apply-job/${jobId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setStats(statsRes.data);
+
+      if (response.data.success) {
+        setAppliedJobs(prev => [...prev, response.data.job]);
+        toast.success('Successfully applied for the job!');
+      }
     } catch (error) {
-      console.error('Error saving job', error);
+      console.error('Error applying for job:', error);
+      toast.error(error.response?.data?.message || 'Failed to apply for the job');
     }
   };
 
@@ -104,79 +99,137 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="dashboard-container">
-        <h2 className="dashboard-title">Your Job Application Stats</h2>
-        <div className="stats-grid">
-          <div className="stat-card total-applications">
-            <h3>Total Applications</h3>
-            <p className="stat-number">{stats.totalJobs}</p>
-          </div>
-          <div className="stat-card pending">
-            <h3>Pending</h3>
-            <p className="stat-number">{stats.pending}</p>
-          </div>
-          <div className="stat-card interviews">
-            <h3>Interviews</h3>
-            <p className="stat-number">{stats.interviews}</p>
-          </div>
-          <div className="stat-card rejected">
-            <h3>Rejected</h3>
-            <p className="stat-number">{stats.rejected}</p>
-          </div>
-          <div className="stat-card hired">
-            <h3>Hired</h3>
-            <p className="stat-number">{stats.hired}</p>
-          </div>
-        </div>
+        {user?.role === 'jobseeker' ? (
+          <div className="jobseeker-dashboard">
+            <div className="dashboard-header">
+              <h1>Job Seeker Dashboard</h1>
+              <p>Manage your job applications and professional profile</p>
+            </div>
 
-        {/* Resume Section */}
-        <div className="section">
-          <h2>Resume Management</h2>
-          <ResumeBuilder />
-        </div>
-
-        {/* Job Search Section */}
-        <div className="section">
-          <h2>Available Jobs</h2>
-          <JobFilters 
-            filters={filters}
-            setFilters={setFilters}
-            uniqueLocations={uniqueLocations}
-            uniqueTypes={uniqueTypes}
-          />
-          <div className="job-list">
-            {jobs.map((job) => (
-              <div key={job._id} className="job-item">
-                <div className="job-info">
-                  <h3>{job.position} @ {job.company}</h3>
-                  <p>{job.workLocation} • {job.workType}</p>
-                  <span className={`status-badge status-${job.status.toLowerCase()}`}>
-                    {job.status}
-                  </span>
+            {/* Resume Section */}
+            <div className="dashboard-section resume-section">
+              <div className="section-header">
+                <h2>Resume Management</h2>
+                <p>Create and manage your professional resume</p>
+              </div>
+              <div className="resume-container">
+                <div className="resume-builder">
+                  <ResumeBuilder 
+                    resumeData={resumeData}
+                    setResumeData={setResumeData}
+                    setPreviewUrl={setPreviewUrl}
+                  />
                 </div>
-                <button 
-                  onClick={() => handleSaveJob(job._id)}
-                  className="save-btn"
-                  disabled={job.status === 'Pending'}
-                >
-                  {job.status === 'Pending' ? 'Saved' : 'Save Job'}
+                {previewUrl && (
+                  <div className="resume-preview">
+                    <h3>Resume Preview</h3>
+                    <div className="preview-container">
+                      <iframe
+                        src={previewUrl}
+                        title="Resume Preview"
+                        className="resume-iframe"
+                      />
+                    </div>
+                    <a 
+                      href={previewUrl}
+                      download="resume.pdf"
+                      className="download-button"
+                    >
+                      Download Resume
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Job Applications Section */}
+            <div className="dashboard-section applications-section">
+              <div className="section-header">
+                <h2>Your Job Applications</h2>
+                <p>Track your application status</p>
+              </div>
+              <div className="applications-grid">
+                <div className="stat-card">
+                  <h3>Total Applications</h3>
+                  <p className="stat-number">{appliedJobs.length}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Under Review</h3>
+                  <p className="stat-number">
+                    {appliedJobs.filter(job => job.status === 'under-review').length}
+                  </p>
+                </div>
+                <div className="stat-card">
+                  <h3>Interviews</h3>
+                  <p className="stat-number">
+                    {appliedJobs.filter(job => job.status === 'interview').length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Jobs Section */}
+            <div className="dashboard-section jobs-section">
+              <div className="section-header">
+                <h2>Recent Job Opportunities</h2>
+                <button className="view-all-btn" onClick={() => navigate('/jobs')}>
+                  View All Jobs
                 </button>
               </div>
-            ))}
-            {jobs.length === 0 && (
-              <div className="no-jobs">
-                <p>No jobs found matching your filters</p>
+              <div className="jobs-grid">
+                {jobs.slice(0, 4).map((job) => (
+                  <div key={job._id} className="job-card">
+                    <div className="job-card-header">
+                      <h3>{job.position}</h3>
+                      <span className="company-name">{job.company}</span>
+                    </div>
+                    <div className="job-card-body">
+                      <p><strong>Location:</strong> {job.workLocation}</p>
+                      <p><strong>Type:</strong> {job.workType}</p>
+                      <p><strong>Salary:</strong> {job.salary}</p>
+                    </div>
+                    <div className="job-card-footer">
+                      <button
+                        className={`apply-btn ${appliedJobs.some(aj => aj._id === job._id) ? 'applied' : ''}`}
+                        onClick={() => handleApply(job._id)}
+                        disabled={appliedJobs.some(aj => aj._id === job._id)}
+                      >
+                        {appliedJobs.some(aj => aj._id === job._id) ? '✓ Applied' : 'Apply Now'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-
-        {/* Resume Progress */}
-        <div className="section">
-          <h2>Resume Completion</h2>
-          <div className="progress-bar">
-            <div className="progress" style={{ width: '70%' }}>70%</div>
+        ) : (
+          <div className="recruiter-dashboard">
+            <div className="dashboard-header">
+              <h1>Recruiter Dashboard</h1>
+              <p>Manage your job postings and applications</p>
+            </div>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <h3>Total Jobs Posted</h3>
+                <p className="stat-number">{jobs.length}</p>
+              </div>
+              <div className="stat-card">
+                <h3>Active Jobs</h3>
+                <p className="stat-number">
+                  {jobs.filter(job => job.status === 'active').length}
+                </p>
+              </div>
+              <div className="stat-card">
+                <h3>Total Applications</h3>
+                <p className="stat-number">0</p>
+              </div>
+              <div className="stat-card">
+                <h3>Interviews Scheduled</h3>
+                <p className="stat-number">0</p>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Layout>
   );
