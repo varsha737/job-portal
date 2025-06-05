@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
+import axios from '../api/axios';
+import { toast } from 'react-toastify';
+
+// Job status options
+const JOB_STATUS = {
+    OPEN: 'Open',
+    CLOSED: 'Closed',
+    INACTIVE: 'Inactive',
+    EXPIRED: 'Expired'
+};
 
 const UpdateJob = () => {
     const { id } = useParams();
@@ -10,19 +19,21 @@ const UpdateJob = () => {
         company: '',
         status: '',
         workType: '',
-        workLocation: '',
+        workLocation: ''
     });
 
     useEffect(() => {
         const fetchJob = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`/api/v1/job/get-job/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setJobData(res.data.job);
+                console.log('Fetching job with ID:', id);
+                const response = await axios.get(`/job/get-job/${id}`);
+                console.log('Response:', response.data);
+                if (response.data.success) {
+                    setJobData(response.data.job);
+                }
             } catch (error) {
                 console.error('Failed to fetch job:', error);
+                toast.error('Failed to fetch job details');
             }
         };
 
@@ -36,15 +47,14 @@ const UpdateJob = () => {
     const handleUpdateJob = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(`/api/v1/job/update-job/${id}`, jobData, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            alert('Job updated successfully!');
-            navigate('/jobs'); // Adjust this path based on your routing
+            const response = await axios.patch(`/job/update-job/${id}`, jobData);
+            if (response.data.success) {
+                toast.success('Job updated successfully!');
+                navigate('/dashboard');
+            }
         } catch (error) {
             console.error('Failed to update job:', error);
-            alert('Failed to update job.');
+            toast.error(error.response?.data?.message || 'Failed to update job');
         }
     };
 
@@ -84,12 +94,10 @@ const UpdateJob = () => {
                         required
                     >
                         <option value="">Select Status</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Interview">Interview</option>
-                        <option value="Reject">Declined</option>
-                        <option value="Hiring">Declined</option>
-                        <option value="Open">Declined</option>
-                        <option value="Closed">Declined</option>
+                        <option value={JOB_STATUS.OPEN}>{JOB_STATUS.OPEN}</option>
+                        <option value={JOB_STATUS.INACTIVE}>{JOB_STATUS.INACTIVE}</option>
+                        <option value={JOB_STATUS.CLOSED}>{JOB_STATUS.CLOSED}</option>
+                        <option value={JOB_STATUS.EXPIRED}>{JOB_STATUS.EXPIRED}</option>
                     </select>
                 </div>
                 <div className="mb-3">

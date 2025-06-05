@@ -12,12 +12,38 @@ import {
     Person as PersonIcon,
     Work as WorkIcon,
     LocationOn as LocationIcon,
-    Schedule as ScheduleIcon
+    Schedule as ScheduleIcon,
+    Refresh as RefreshIcon
 } from '@mui/icons-material';
 import axios from '../api/axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import InterviewSchedule from './InterviewSchedule';
+
+// Constants for status options
+const JOB_STATUS = {
+    OPEN: 'Open',
+    CLOSED: 'Closed'
+};
+
+const APPLICATION_STATUS = {
+    PENDING: 'Pending',
+    SHORTLISTED: 'Shortlisted',
+    INTERVIEW: 'Interview',
+    REJECTED: 'Rejected',
+    HIRED: 'Hired'
+};
+
+const WORK_TYPES = [
+    'Full-time',
+    'Part-time',
+    'Contract',
+    'Internship',
+    'Hybrid',
+    'Remote'
+];
+
+const POLLING_INTERVAL = 30000; // Poll every 30 seconds
 
 const RecruiterDashboard = () => {
     const navigate = useNavigate();
@@ -25,6 +51,8 @@ const RecruiterDashboard = () => {
     const [openDialog, setOpenDialog] = useState(false);
     const [currentTab, setCurrentTab] = useState(0);
     const [jobFilter, setJobFilter] = useState('all');
+    const [lastUpdate, setLastUpdate] = useState(new Date());
+    const [isLoading, setIsLoading] = useState(false);
     const [stats, setStats] = useState({
         totalJobs: 0,
         activeJobs: 0,
@@ -34,9 +62,9 @@ const RecruiterDashboard = () => {
     const [newJob, setNewJob] = useState({
         company: '',
         position: '',
-        workType: 'Full-time',
+        workType: WORK_TYPES[0],
         workLocation: 'Mumbai',
-        status: 'Open',
+        status: JOB_STATUS.OPEN,
         description: '',
         requirements: '',
         salary: '',
@@ -49,6 +77,7 @@ const RecruiterDashboard = () => {
     // Fetch recruiter's jobs and stats
     const fetchDashboardData = async () => {
         try {
+            setIsLoading(true);
             const jobsResponse = await axios.get('/job/recruiter-jobs');
             const analyticsResponse = await axios.get('/job/recruiter-analytics');
 
@@ -62,14 +91,30 @@ const RecruiterDashboard = () => {
                     interviewScheduled: analytics.applicationsByStatus.find(s => s.name === 'Interview')?.value || 0
                 });
             }
+            setLastUpdate(new Date());
         } catch (error) {
             toast.error(error.response?.data?.message || 'Error fetching dashboard data');
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    // Set up polling
     useEffect(() => {
+        // Initial fetch
         fetchDashboardData();
+
+        // Set up polling interval
+        const pollInterval = setInterval(fetchDashboardData, POLLING_INTERVAL);
+
+        // Cleanup on component unmount
+        return () => clearInterval(pollInterval);
     }, []);
+
+    // Manual refresh function
+    const handleManualRefresh = () => {
+        fetchDashboardData();
+    };
 
     const handleCreateJob = async () => {
         try {
@@ -112,16 +157,18 @@ const RecruiterDashboard = () => {
         fetchDashboardData();
     };
 
-    // Add this function for filtering jobs
+    // Update the filteredJobs function
     const filteredJobs = jobs.filter(job => {
         if (jobFilter === 'all') return true;
-        return job.status.toLowerCase() === jobFilter;
+        if (jobFilter === 'open') return job.status === JOB_STATUS.OPEN;
+        if (jobFilter === 'closed') return job.status === JOB_STATUS.CLOSED;
+        return true;
     });
 
-    // Add this function to handle job status toggle
+    // Update handleToggleJobStatus
     const handleToggleJobStatus = async (jobId, currentStatus) => {
         try {
-            const newStatus = currentStatus.toLowerCase() === 'open' ? 'Closed' : 'Open';
+            const newStatus = currentStatus === JOB_STATUS.OPEN ? JOB_STATUS.CLOSED : JOB_STATUS.OPEN;
             const response = await axios.patch(`/job/update-status/${jobId}`, { status: newStatus });
 
             if (response.data.success) {
@@ -140,17 +187,32 @@ const RecruiterDashboard = () => {
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
             {/* Dashboard Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-                <Typography variant="h4" component="h1">
-                    Recruiter Dashboard
-                </Typography>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<AddIcon />}
-                    onClick={() => setOpenDialog(true)}
-                >
-                    Post New Job
-                </Button>
+                <Box>
+                    <Typography variant="h4" component="h1">
+                        Recruiter Dashboard
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                        Last updated: {lastUpdate.toLocaleTimeString()}
+                    </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
+                        variant="outlined"
+                        startIcon={<RefreshIcon />}
+                        onClick={handleManualRefresh}
+                        disabled={isLoading}
+                    >
+                        Refresh
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<AddIcon />}
+                        onClick={() => setOpenDialog(true)}
+                    >
+                        Post New Job
+                    </Button>
+                </Box>
             </Box>
 
             {/* Stats Cards */}
@@ -249,7 +311,7 @@ const RecruiterDashboard = () => {
                                             </Typography>
                                             <Chip
                                                 label={job.status}
-                                                color={job.status.toLowerCase() === 'open' ? 'success' : 'error'}
+                                                color={job.status === JOB_STATUS.OPEN ? 'success' : 'error'}
                                                 size="small"
                                             />
                                         </Box>
@@ -293,10 +355,10 @@ const RecruiterDashboard = () => {
                                             <Button
                                                 size="small"
                                                 variant="outlined"
-                                                color={job.status.toLowerCase() === 'open' ? 'error' : 'success'}
+                                                color={job.status === JOB_STATUS.OPEN ? 'error' : 'success'}
                                                 onClick={() => handleToggleJobStatus(job._id, job.status)}
                                             >
-                                                {job.status.toLowerCase() === 'open' ? 'Close Job' : 'Reopen Job'}
+                                                {job.status === JOB_STATUS.OPEN ? 'Close Job' : 'Reopen Job'}
                                             </Button>
                                             <Button
                                                 size="small"
@@ -332,6 +394,13 @@ const RecruiterDashboard = () => {
                                                     <Typography color="textSecondary">
                                                         Applied for: {job.position}
                                                     </Typography>
+                                                    <Chip
+                                                        label={applicant.status || APPLICATION_STATUS.PENDING}
+                                                        color={applicant.status === APPLICATION_STATUS.INTERVIEW ? 'success' :
+                                                            applicant.status === APPLICATION_STATUS.REJECTED ? 'error' : 'default'}
+                                                        size="small"
+                                                        sx={{ mt: 1 }}
+                                                    />
                                                 </Box>
                                             </Box>
                                             <Box>
@@ -339,6 +408,7 @@ const RecruiterDashboard = () => {
                                                     variant="outlined"
                                                     size="small"
                                                     onClick={() => handleScheduleInterview(job._id, applicant)}
+                                                    disabled={applicant.status === APPLICATION_STATUS.REJECTED}
                                                 >
                                                     Schedule Interview
                                                 </Button>
@@ -403,12 +473,11 @@ const RecruiterDashboard = () => {
                                 value={newJob.workType}
                                 onChange={(e) => setNewJob({ ...newJob, workType: e.target.value })}
                             >
-                                <MenuItem value="Full-time">Full-time</MenuItem>
-                                <MenuItem value="Part-time">Part-time</MenuItem>
-                                <MenuItem value="Internship">Internship</MenuItem>
-                                <MenuItem value="Contract">Contract</MenuItem>
-                                <MenuItem value="Hybrid">Hybrid</MenuItem>
-                                <MenuItem value="Remote">Remote</MenuItem>
+                                {WORK_TYPES.map((type) => (
+                                    <MenuItem key={type} value={type}>
+                                        {type}
+                                    </MenuItem>
+                                ))}
                             </TextField>
                         </Grid>
                         <Grid item xs={12}>

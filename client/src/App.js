@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -18,27 +18,32 @@ import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme/theme';
 import ForgotPassword from "./pages/ForgotPassword";
 import JobView from './pages/JobView';
+import Footer from './components/Footer';
 
 function App() {
   return ( 
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <ToastContainer />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
-        <Route path="/spinner" element={<Spinner />} />
-        <Route path="*" element={<NotFound />} />
-        <Route path="/jobs" element={<Jobs />} />
-        <Route path="/update-job/:id" element={<UpdateJob />} />
-        <Route path="/update-profile" element={<UpdateProfile />} />
-        <Route path="/user/profile" element={<Profile />} />
-        <Route path="/job/:id" element={<JobView />} />
-      </Routes>
+      <div style={{ minHeight: '100vh', paddingBottom: '80px' }}>
+        <Routes>
+          <Route path="/job-portal" element={<Navigate to="/" replace />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
+          <Route path="/spinner" element={<Spinner />} />
+          <Route path="*" element={<NotFound />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/update-job/:id" element={<UpdateJob />} />
+          <Route path="/update-profile" element={<UpdateProfile />} />
+          <Route path="/user/profile" element={<Profile />} />
+          <Route path="/job/:id" element={<JobView />} />
+        </Routes>
+      </div>
+      <Footer />
     </ThemeProvider>
   );
 }

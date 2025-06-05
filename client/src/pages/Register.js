@@ -45,27 +45,35 @@ const Register = () => {
       if (role === "recruiter" && !company) {
         return toast.error("Company name is required for recruiters");
       }
-      dispatch(showLoading());
-      const { data } = await axios.post("/auth/register", {
+
+      const registerData = {
         name,
         email,
         password,
-        phone: phone || undefined, // Only send phone if it's provided
+        phone: phone || undefined,
         role,
         company: role === "recruiter" ? company : undefined
-      });
+      };
+      
+      console.log('Sending registration data:', registerData);
+      dispatch(showLoading());
+      
+      const { data } = await axios.post("/auth/register", registerData);
+      console.log('Registration response:', data);
+      
       dispatch(hideLoading());
 
       if (data.success) {
         toast.success("Register Successfully");
         navigate("/login");
       } else {
+        console.log('Registration failed:', data);
         toast.error(data.message || "Something went wrong");
       }
     } catch (error) {
+      console.error('Registration error:', error.response || error);
       dispatch(hideLoading());
       toast.error(error.response?.data?.message || "Invalid Form Details Please Try Again");
-      console.log(error);
     }
   };
 

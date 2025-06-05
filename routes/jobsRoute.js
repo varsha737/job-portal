@@ -19,21 +19,24 @@ import checkRole from "../middlewares/roleMiddleware.js";
 const router = express.Router();
 
 // Public routes
-router.get("/get-job", getAllJobsController);
+router.get("/jobs", getAllJobsController);
 router.get("/get-job/:id", getJobById);
 
-// Job seeker routes
-router.patch("/apply-job/:id", userAuth, applyJobController);
+// Protected routes
+router.use(userAuth);
 
 // Recruiter routes
-router.get("/recruiter-analytics", userAuth, checkRole('recruiter', 'admin'), getRecruiterAnalytics);
-router.get("/recruiter-jobs", userAuth, checkRole('recruiter', 'admin'), getRecruiterJobs);
-router.post("/create-job", userAuth, checkRole('recruiter', 'admin'), createJobController);
-router.patch("/update-status/:id", userAuth, checkRole('recruiter', 'admin'), updateJobStatus);
-router.post("/schedule-interview", userAuth, checkRole('recruiter', 'admin'), scheduleInterview);
-router.delete("/delete-job/:id", userAuth, checkRole('recruiter', 'admin'), deleteJobController);
+router.use(checkRole('recruiter', 'admin'));
+router.get("/recruiter-analytics", getRecruiterAnalytics);
+router.get("/recruiter-jobs", getRecruiterJobs);
+router.post("/create-job", createJobController);
+router.patch("/update-job/:id", updateJobController);
+router.delete("/delete-job/:id", deleteJobController);
+router.patch("/update-status/:id", updateJobStatus);
+router.post("/schedule-interview", scheduleInterview);
 
-// Stats route
-router.get("/job-stats", userAuth, getJobStats);
+// Job seeker routes
+router.post("/apply-job/:id", checkRole('candidate'), applyJobController);
+router.get("/job-stats", checkRole('candidate'), getJobStats);
 
 export default router;

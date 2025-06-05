@@ -2,6 +2,23 @@ import { trusted } from "mongoose";
 import jobsModel from "../models/jobsModels.js";
 import mongoose from "mongoose";
 
+// Cache duration in milliseconds (5 seconds)
+const CACHE_DURATION = 5000;
+let jobsCache = {
+    data: null,
+    lastUpdated: null
+};
+
+let analyticsCache = {
+    data: null,
+    lastUpdated: null
+};
+
+// Helper function to check if user is authorized to modify job
+const isAuthorizedToModifyJob = (job, userId) => {
+    return job.createdBy.toString() === userId.toString();
+};
+
 // ======== CREATE JOB ========
 export const createJobController = async (req, res, next) => {
   try {
@@ -11,6 +28,7 @@ export const createJobController = async (req, res, next) => {
     }
     req.body.createdBy = req.user.userId;
     const job = await jobsModel.create(req.body);
+    clearCache();
     res.status(201).json({ job });
   } catch (error) {
     next(error);
@@ -190,53 +208,59 @@ export const applyJobController = async (req, res, next) => {
 
 // ======== UPDATE JOBS =========
 export const updateJobController = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { company, position } = req.body;
+    try {
+        const { id } = req.params;
+        const { company, position } = req.body;
 
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return next(`Invalid Job ID: ${id}`);
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return next(`Invalid Job ID: ${id}`);
+        }
+
+        // Validate fields
+        if (!company || !position) {
+            return next("Please Provide All Fields");
+        }
+
+        // Find job
+        const job = await jobsModel.findById(id);
+        if (!job) {
+            return next(`No job found with this ID ${id}`);
+        }
+
+        // Update job
+        const updateJob = await jobsModel.findByIdAndUpdate(id, req.body, {
+            new: true,
+            runValidators: true,
+        });
+
+        clearCache();
+        res.status(200).json({ updateJob });
+
+    } catch (error) {
+        next(error);
     }
-
-    // Validate fields
-    if (!company || !position) {
-      return next("Please Provide All Fields");
-    }
-
-    // Find job
-    const job = await jobsModel.findById(id);
-    if (!job) {
-      return next(`No job found with this ID ${id}`);
-    }
-
-    // Update job
-    const updateJob = await jobsModel.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
-    res.status(200).json({ updateJob });
-
-  } catch (error) {
-    next(error);
-  }
 };
 
 //===== DELETE JOBS =======
 export const deleteJobController = async (req, res, next) => {
-  const { id } = req.params;
+    try {
+        const { id } = req.params;
 
-  //find job
-  const job = await jobsModel.findOne({_id: id });
+        //find job
+        const job = await jobsModel.findOne({ _id: id });
 
-  //validation
-  if (!job) {
-    next(`No Job Found With This ID ${id}`);
-  }
-  
-  await job.deleteOne();
-  res.status(200).json({ message: "Success, Job Deleted!" });
+        //validation
+        if (!job) {
+            return next(`No Job Found With This ID ${id}`);
+        }
+        
+        await job.deleteOne();
+        clearCache();
+        res.status(200).json({ message: "Success, Job Deleted!" });
+    } catch (error) {
+        next(error);
+    }
 };
 
 //===== GET JOBS STATS =======
@@ -290,80 +314,108 @@ export const getJobStats = async (req, res, next) => {
 
 //===== GET RECRUITER JOBS =======
 export const getRecruiterJobs = async (req, res, next) => {
-  try {
-    const jobs = await jobsModel.find({ createdBy: req.user.userId })
-      .sort({ createdAt: -1 });
+    try {
+        // Check if cache is valid
+        const now = Date.now();
+        if (jobsCache.data && jobsCache.lastUpdated && (now - jobsCache.lastUpdated < CACHE_DURATION)) {
+            return res.status(200).json(jobsCache.data);
+        }
 
-    res.status(200).json({
-      success: true,
-      total: jobs.length,
-      jobs
-    });
-  } catch (error) {
-    console.error("Error in getRecruiterJobs:", error);
-    next(error);
-  }
+        // If cache is invalid or doesn't exist, fetch fresh data
+        const jobs = await jobsModel.find()
+            .sort({ createdAt: -1 })
+            .lean(); // Use lean() for better performance
+
+        const response = {
+            success: true,
+            total: jobs.length,
+            jobs
+        };
+
+        // Update cache
+        jobsCache = {
+            data: response,
+            lastUpdated: now
+        };
+
+        res.status(200).json(response);
+    } catch (error) {
+        console.error("Error in getRecruiterJobs:", error);
+        next(error);
+    }
 };
 
 // ======== GET RECRUITER ANALYTICS ========
 export const getRecruiterAnalytics = async (req, res, next) => {
-  try {
-    const userId = req.user.userId;
-
-    // Get all jobs posted by the recruiter
-    const jobs = await jobsModel.find({ createdBy: userId });
-
-    // Calculate analytics
-    const analytics = {
-      totalJobs: jobs.length,
-      activeJobs: jobs.filter(job => job.status === 'Open').length,
-      totalApplications: jobs.reduce((acc, job) => acc + (job.applicants?.length || 0), 0),
-      applicationsByStatus: [
-        { 
-          name: 'Pending', 
-          value: jobs.reduce((acc, job) => 
-            acc + (job.applicants?.filter(app => app.status === 'Pending').length || 0), 0
-          )
-        },
-        { 
-          name: 'Shortlisted', 
-          value: jobs.reduce((acc, job) => 
-            acc + (job.applicants?.filter(app => app.status === 'Shortlisted').length || 0), 0
-          )
-        },
-        { 
-          name: 'Interview', 
-          value: jobs.reduce((acc, job) => 
-            acc + (job.applicants?.filter(app => app.status === 'Interview').length || 0), 0
-          )
-        },
-        { 
-          name: 'Rejected', 
-          value: jobs.reduce((acc, job) => 
-            acc + (job.applicants?.filter(app => app.status === 'Reject').length || 0), 0
-          )
+    try {
+        // Check if cache is valid
+        const now = Date.now();
+        if (analyticsCache.data && analyticsCache.lastUpdated && (now - analyticsCache.lastUpdated < CACHE_DURATION)) {
+            return res.status(200).json(analyticsCache.data);
         }
-      ],
-      recentApplications: jobs.flatMap(job => 
-        (job.applicants || []).map(app => ({
-          jobId: job._id,
-          jobTitle: job.position,
-          company: job.company,
-          applicantId: app.userId,
-          status: app.status,
-          appliedAt: app.appliedAt
-        }))
-      ).sort((a, b) => b.appliedAt - a.appliedAt).slice(0, 10)
-    };
 
-    res.status(200).json({
-      success: true,
-      analytics
-    });
-  } catch (error) {
-    console.error('Error in getRecruiterAnalytics:', error);
-    next(error);
-  }
+        // If cache is invalid or doesn't exist, fetch fresh data
+        const jobs = await jobsModel.find().lean();
+
+        // Calculate analytics
+        const analytics = {
+            totalJobs: jobs.length,
+            activeJobs: jobs.filter(job => job.status === 'Open').length,
+            totalApplications: jobs.reduce((acc, job) => acc + (job.applicants?.length || 0), 0),
+            applicationsByStatus: [
+                { 
+                    name: 'Pending', 
+                    value: jobs.reduce((acc, job) => 
+                        acc + (job.applicants?.filter(app => app.status === 'Pending').length || 0), 0
+                    )
+                },
+                { 
+                    name: 'Shortlisted', 
+                    value: jobs.reduce((acc, job) => 
+                        acc + (job.applicants?.filter(app => app.status === 'Shortlisted').length || 0), 0
+                    )
+                },
+                { 
+                    name: 'Interview', 
+                    value: jobs.reduce((acc, job) => 
+                        acc + (job.applicants?.filter(app => app.status === 'Interview').length || 0), 0
+                    )
+                },
+                { 
+                    name: 'Rejected', 
+                    value: jobs.reduce((acc, job) => 
+                        acc + (job.applicants?.filter(app => app.status === 'Reject').length || 0), 0
+                    )
+                }
+            ],
+            recentApplications: jobs.flatMap(job => 
+                (job.applicants || []).map(app => ({
+                    jobId: job._id,
+                    jobTitle: job.position,
+                    company: job.company,
+                    applicantId: app.userId,
+                    status: app.status,
+                    appliedAt: app.appliedAt
+                }))
+            ).sort((a, b) => b.appliedAt - a.appliedAt).slice(0, 10)
+        };
+
+        const response = {
+            success: true,
+            analytics
+        };
+
+        // Update cache
+        analyticsCache = {
+            data: response,
+            lastUpdated: now
+        };
+
+        res.status(200).json(response);
+    } catch (error) {
+        console.error('Error in getRecruiterAnalytics:', error);
+        next(error);
+    }
 };
 
 //===== SCHEDULE INTERVIEW =======
@@ -425,54 +477,47 @@ export const scheduleInterview = async (req, res) => {
 
 //===== UPDATE JOB STATUS =======
 export const updateJobStatus = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
 
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid Job ID: ${id}`
-      });
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid Job ID: ${id}`
+            });
+        }
+
+        // Find job
+        const job = await jobsModel.findById(id);
+        
+        if (!job) {
+            return res.status(404).json({
+                success: false,
+                message: `No job found with ID ${id}`
+            });
+        }
+
+        // Update status
+        job.status = status;
+        await job.save();
+
+        clearCache();
+        res.status(200).json({
+            success: true,
+            message: `Job status updated to ${status}`,
+            job
+        });
+
+    } catch (error) {
+        console.error('Error in updateJobStatus:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error while updating job status',
+            error: error.message
+        });
     }
-
-    // Find and update job
-    const job = await jobsModel.findById(id);
-    
-    if (!job) {
-      return res.status(404).json({
-        success: false,
-        message: `No job found with ID ${id}`
-      });
-    }
-
-    // Check if user is authorized (job creator)
-    if (job.createdBy.toString() !== req.user.userId) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this job'
-      });
-    }
-
-    // Update status
-    job.status = status;
-    await job.save();
-
-    res.status(200).json({
-      success: true,
-      message: `Job status updated to ${status}`,
-      job
-    });
-
-  } catch (error) {
-    console.error('Error in updateJobStatus:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error while updating job status',
-      error: error.message
-    });
-  }
 };
 
 //===== GET SINGLE JOB =======
@@ -524,6 +569,18 @@ export const getJobById = async (req, res, next) => {
       error: error.message
     });
   }
+};
+
+// Clear cache when jobs are modified
+const clearCache = () => {
+    jobsCache = {
+        data: null,
+        lastUpdated: null
+    };
+    analyticsCache = {
+        data: null,
+        lastUpdated: null
+    };
 };
 
 

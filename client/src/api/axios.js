@@ -1,46 +1,45 @@
 import axios from 'axios';
 
+// Create axios instance with base configuration
 const instance = axios.create({
   baseURL: 'http://localhost:5000/api/v1',
-  timeout: 5000,
   headers: {
     'Content-Type': 'application/json'
-  },
-  withCredentials: true
+  }
 });
 
-// Add a request interceptor to add token
+// Add request interceptor
 instance.interceptors.request.use(
   (config) => {
+    // Get token from localStorage
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
+    console.log('Making request:', config.method.toUpperCase(), config.url);
     return config;
   },
   (error) => {
+    console.error('Request error:', error);
     return Promise.reject(error);
   }
 );
 
-// Add a response interceptor to handle errors
+// Add response interceptor
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    console.log('Response:', response.status, response.data);
+    return response;
+  },
   (error) => {
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Response error:', error.response.data);
-      if (error.response.status === 401) {
-        // Handle unauthorized access
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
+      console.error('Error response:', error.response.status, error.response.data);
     } else if (error.request) {
-      // The request was made but no response was received
-      console.error('Request error:', error.request);
+      console.error('No response received');
     } else {
-      // Something happened in setting up the request that triggered an Error
       console.error('Error:', error.message);
     }
     return Promise.reject(error);

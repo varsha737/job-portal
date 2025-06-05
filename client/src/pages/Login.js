@@ -19,11 +19,13 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log('Attempting login with:', { email });
       dispatch(showLoading());
       const { data } = await axios.post("/auth/login", { email, password });
+      console.log('Login response:', data);
       dispatch(hideLoading());
 
-      if (data.token) {
+      if (data.success) {
         localStorage.setItem("token", data.token);
         toast.success("Login Successfully");
         if (data.user.role === 'recruiter') {
@@ -32,12 +34,13 @@ const Login = () => {
           navigate('/dashboard');
         }
       } else {
+        console.log('Login failed:', data);
         toast.error("Login failed. Please try again.");
       }
     } catch (error) {
       dispatch(hideLoading());
+      console.error('Login error:', error.response?.data || error);
       toast.error(error.response?.data?.message || 'Invalid credentials, please try again!');
-      console.error("Login error:", error);
     }
   };
 

@@ -22,7 +22,6 @@ import {
     Work as WorkIcon,
     LocationOn as LocationIcon,
     Business as BusinessIcon,
-    Schedule as ScheduleIcon,
     Description as DescriptionIcon,
     Assignment as AssignmentIcon,
     AttachMoney as SalaryIcon,
