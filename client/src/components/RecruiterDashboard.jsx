@@ -13,7 +13,8 @@ import {
     Work as WorkIcon,
     LocationOn as LocationIcon,
     Schedule as ScheduleIcon,
-    Refresh as RefreshIcon
+    Refresh as RefreshIcon,
+    Logout as LogoutIcon
 } from '@mui/icons-material';
 import axios from '../api/axios';
 import { toast } from 'react-toastify';
@@ -183,6 +184,12 @@ const RecruiterDashboard = () => {
         }
     };
 
+    const handleLogout = () => {
+        localStorage.clear();
+        toast.success("Logout Successfully");
+        navigate("/login");
+    };
+
     return (
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
             {/* Dashboard Header */}
@@ -211,6 +218,14 @@ const RecruiterDashboard = () => {
                         onClick={() => setOpenDialog(true)}
                     >
                         Post New Job
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<LogoutIcon />}
+                        onClick={handleLogout}
+                    >
+                        Logout
                     </Button>
                 </Box>
             </Box>

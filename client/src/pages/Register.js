@@ -3,15 +3,18 @@ import { Link, useNavigate } from "react-router-dom";
 import InputFrom from "../components/InputFrom";
 import { useDispatch, useSelector } from "react-redux";
 import { hideLoading, showLoading } from "../redux/features/alertSlice";
+import { setUser } from '../redux/features/auth/authSlice';
 import axios from "../api/axios";
 import Spinner from "../components/Spinner";
 import "../styles/Spinner.css";
 import "../styles/Banner.css";
 import { toast } from "react-toastify";
 import { FaUserTie, FaBuilding } from 'react-icons/fa';
+import "../styles/Register.css";
 
 const Register = () => {
   const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
@@ -48,6 +51,7 @@ const Register = () => {
 
       const registerData = {
         name,
+        lastName,
         email,
         password,
         phone: phone || undefined,
@@ -64,8 +68,14 @@ const Register = () => {
       dispatch(hideLoading());
 
       if (data.success) {
+        localStorage.setItem("token", data.token);
+        dispatch(setUser(data.user));
         toast.success("Register Successfully");
-        navigate("/login");
+        if (role === 'recruiter') {
+          navigate("/recruiter-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         console.log('Registration failed:', data);
         toast.error(data.message || "Something went wrong");
@@ -79,6 +89,28 @@ const Register = () => {
 
   return (
     <>
+      <div className="back-button-container">
+        <button 
+          className="back-button" 
+          onClick={() => navigate('/')}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            padding: '10px 20px',
+            backgroundColor: '#4776E6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+        >
+          <i className="fas fa-arrow-left"></i> Back to Home
+        </button>
+      </div>
       {loading ? (
         <Spinner />
       ) : (
@@ -120,24 +152,34 @@ const Register = () => {
                     </button>
                   </div>
 
-                  <InputFrom
-                    htmlFor="name"
-                    labelText={"Name"}
-                    type={"text"}
-                    value={name}
-                    handleChange={(e) => setName(e.target.value)}
-                    name="name"
-                    required={true}
-                  />
+                  <div className="mb-3">
+                    <div className="d-flex gap-2">
+                      <InputFrom
+                        htmlFor="name"
+                        labelText={"Name"}
+                        type="text"
+                        value={name}
+                        handleChange={(e) => setName(e.target.value)}
+                        name="name"
+                      />
+                      <InputFrom
+                        htmlFor="lastName"
+                        labelText={"Last Name"}
+                        type="text"
+                        value={lastName}
+                        handleChange={(e) => setLastName(e.target.value)}
+                        name="lastName"
+                      />
+                    </div>
+                  </div>
 
                   <InputFrom
                     htmlFor="email"
                     labelText={"Email"}
-                    type={"email"}
+                    type="email"
                     value={email}
                     handleChange={(e) => setEmail(e.target.value)}
                     name="email"
-                    required={true}
                   />
 
                   <InputFrom
@@ -159,11 +201,10 @@ const Register = () => {
                   <InputFrom
                     htmlFor="password"
                     labelText={"Password"}
-                    type={"password"}
+                    type="password"
                     value={password}
                     handleChange={(e) => setPassword(e.target.value)}
                     name="password"
-                    required={true}
                   />
 
                   {role === "recruiter" && (

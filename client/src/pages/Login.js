@@ -45,6 +45,28 @@ const Login = () => {
 
   return (
     <>
+      <div className="back-button-container">
+        <button 
+          className="back-button" 
+          onClick={() => navigate('/')}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            padding: '10px 20px',
+            backgroundColor: '#4776E6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+        >
+          <i className="fas fa-arrow-left"></i> Back to Home
+        </button>
+      </div>
       {loading ? (
         <Spinner />
       ) : (
