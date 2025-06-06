@@ -1,8 +1,15 @@
 import React from 'react';
 import './JobFilters.css';
 
-const JobFilters = ({ filters, setFilters, uniqueLocations, uniqueTypes }) => {
-  const statusOptions = ['all', 'Pending', 'Reject', 'Interview', 'Hiring', 'Open', 'Closed'];
+const JobFilters = ({ 
+  filters, 
+  setFilters, 
+  uniqueLocations = [], 
+  uniqueTypes = [],
+  showStatusFilter = false 
+}) => {
+  const workTypeOptions = ['all', 'Full-Time', 'Part-Time', 'Contract', 'Internship'];
+  const locationOptions = ['all', 'Remote', 'On-Site', 'Hybrid'];
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -25,20 +32,22 @@ const JobFilters = ({ filters, setFilters, uniqueLocations, uniqueTypes }) => {
         />
       </div>
 
-      <div className="filter-group">
-        <label>Status:</label>
-        <select 
-          name="status" 
-          value={filters.status} 
-          onChange={handleFilterChange}
-        >
-          {statusOptions.map(status => (
-            <option key={status} value={status.toLowerCase()}>
-              {status}
-            </option>
-          ))}
-        </select>
-      </div>
+      {showStatusFilter && (
+        <div className="filter-group">
+          <label>Status:</label>
+          <select 
+            name="status" 
+            value={filters.status} 
+            onChange={handleFilterChange}
+          >
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="interview">Interview</option>
+            <option value="rejected">Rejected</option>
+            <option value="hired">Hired</option>
+          </select>
+        </div>
+      )}
 
       <div className="filter-group">
         <label>Type:</label>
@@ -47,9 +56,9 @@ const JobFilters = ({ filters, setFilters, uniqueLocations, uniqueTypes }) => {
           value={filters.workType} 
           onChange={handleFilterChange}
         >
-          <option value="all">All</option>
-          {uniqueTypes.map(type => (
-            <option key={type} value={type}>
+          <option value="all">All Types</option>
+          {(uniqueTypes.length > 0 ? uniqueTypes : workTypeOptions).map(type => (
+            <option key={type} value={type.toLowerCase()}>
               {type}
             </option>
           ))}
@@ -63,9 +72,9 @@ const JobFilters = ({ filters, setFilters, uniqueLocations, uniqueTypes }) => {
           value={filters.workLocation} 
           onChange={handleFilterChange}
         >
-          <option value="all">All</option>
-          {uniqueLocations.map(location => (
-            <option key={location} value={location}>
+          <option value="all">All Locations</option>
+          {(uniqueLocations.length > 0 ? uniqueLocations : locationOptions).map(location => (
+            <option key={location} value={location.toLowerCase()}>
               {location}
             </option>
           ))}

@@ -1,64 +1,67 @@
 .job-filters {
     display: flex;
-    gap: 1rem;
     flex-wrap: wrap;
-    align-items: flex-end;
-    background: #fff;
+    gap: 1rem;
     padding: 1rem;
+    background: #f8fafc;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 1.5rem;
 }
 
 .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
     flex: 1;
     min-width: 200px;
 }
 
 .filter-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
     font-size: 0.9rem;
-    color: #666;
     font-weight: 500;
 }
 
 .filter-group select,
-.search-input {
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-    color: #333;
-    background-color: white;
-}
-
-.search-input {
+.filter-group input {
     width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background-color: white;
+    color: #2d3748;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
 }
 
 .filter-group select:focus,
-.search-input:focus {
+.filter-group input:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+    border-color: #4776E6;
+    box-shadow: 0 0 0 2px rgba(71, 118, 230, 0.1);
+}
+
+.search-input {
+    padding-left: 2rem !important;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%234a5568" viewBox="0 0 24 24"><path d="M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-.46 5.28-1.3l5.01 5.01c.39.39 1.02.39 1.41 0l1.41-1.41c.39-.39.39-1.02 0-1.41zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: 0.5rem center;
+    background-size: 1.2rem;
 }
 
 .clear-filters {
-    padding: 0.8rem 1.5rem;
-    background-color: #dc3545;
-    color: white;
+    padding: 0.5rem 1rem;
+    background-color: #EDF2F7;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
+    color: #4A5568;
+    font-size: 0.9rem;
     cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s;
-    height: fit-content;
+    transition: all 0.2s ease;
+    align-self: flex-end;
 }
 
 .clear-filters:hover {
-    background-color: #c82333;
+    background-color: #E2E8F0;
 }
 
 @media (max-width: 768px) {
@@ -72,5 +75,6 @@
 
     .clear-filters {
         width: 100%;
+        margin-top: 0.5rem;
     }
 }

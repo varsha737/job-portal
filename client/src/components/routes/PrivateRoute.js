@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { hideLoading, showLoading } from '../../redux/features/alertSlice';
 import axios from '../../api/axios';
@@ -9,7 +9,7 @@ const PrivateRoute = ({ children }) => {
     const { user } = useSelector(state => state.auth);
     const dispatch = useDispatch();
 
-    const getUser = async () => {
+    const getUser = useCallback(async () => {
         try {
             dispatch(showLoading());
             const token = localStorage.getItem('token');
@@ -18,19 +18,16 @@ const PrivateRoute = ({ children }) => {
                 throw new Error('No token found');
             }
 
-            const { data } = await axios.post('/auth/get-user', 
-                { token }, 
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+            const { data } = await axios.get('/user/get', {
+                headers: {
+                    Authorization: `Bearer ${token}`
                 }
-            );
+            });
 
             dispatch(hideLoading());
             
             if (data.success) {
-                dispatch(setUser(data.user));
+                dispatch(setUser(data.data));
             } else {
                 localStorage.clear();
                 return <Navigate to="/login" />;
@@ -41,13 +38,13 @@ const PrivateRoute = ({ children }) => {
             dispatch(hideLoading());
             return <Navigate to="/login" />;
         }
-    };
+    }, [dispatch]);
 
     useEffect(() => {
         if (!user) {
             getUser();
         }
-    }, [user]);
+    }, [user, getUser]);
 
     if (!localStorage.getItem('token')) {
         return <Navigate to="/login" />;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Layout from '../components/Layout/Layout';
 import ResumeBuilder from '../components/Resume/ResumeBuilder';
 import '../styles/Dashboard.css';
@@ -16,6 +16,30 @@ const Dashboard = () => {
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [resumeData, setResumeData] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
+  const fetchDataRef = useRef(null);
+
+  const handleApply = async (jobId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please login to apply for jobs');
+        navigate('/login');
+        return;
+      }
+
+      const response = await axios.post(`/job/apply-job/${jobId}`);
+
+      if (response.data.success) {
+        toast.success('Successfully applied for the job!');
+        if (fetchDataRef.current) {
+          fetchDataRef.current();
+        }
+      }
+    } catch (error) {
+      console.error('Error applying for job:', error);
+      toast.error(error.response?.data?.message || 'Failed to apply for the job');
+    }
+  };
 
   useEffect(() => {
     if (user?.role === 'recruiter') {
@@ -32,9 +56,7 @@ const Dashboard = () => {
         }
 
         // Fetch jobs
-        const jobsResponse = await axios.get('/job/jobs', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const jobsResponse = await axios.get('/job/jobs');
 
         if (jobsResponse.data.success) {
           setJobs(jobsResponse.data.jobs);
@@ -42,17 +64,13 @@ const Dashboard = () => {
 
         // Fetch applied jobs and resume for job seekers
         if (user?.role === 'jobseeker') {
-          const appliedResponse = await axios.get('/job/applied-jobs', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const appliedResponse = await axios.get('/job/job-stats');
           if (appliedResponse.data.success) {
-            setAppliedJobs(appliedResponse.data.jobs || []);
+            setAppliedJobs(appliedResponse.data.stats || []);
           }
 
           // Fetch resume data
-          const resumeResponse = await axios.get('/resume/get-resume', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const resumeResponse = await axios.get('/resume/get-resume');
           if (resumeResponse.data.success) {
             setResumeData(resumeResponse.data.resume);
             setPreviewUrl(resumeResponse.data.previewUrl);
@@ -61,37 +79,17 @@ const Dashboard = () => {
 
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('Failed to load dashboard data');
+        // toast.error('Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
     };
 
+    // Store fetchData in ref so it can be accessed by handleApply
+    fetchDataRef.current = fetchData;
+
     fetchData();
   }, [navigate, user?.role]);
-
-  const handleApply = async (jobId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please login to apply for jobs');
-        navigate('/login');
-        return;
-      }
-
-      const response = await axios.post(`/job/apply-job/${jobId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        setAppliedJobs(prev => [...prev, response.data.job]);
-        toast.success('Successfully applied for the job!');
-      }
-    } catch (error) {
-      console.error('Error applying for job:', error);
-      toast.error(error.response?.data?.message || 'Failed to apply for the job');
-    }
-  };
 
   if (loading) {
     return (
@@ -155,25 +153,25 @@ const Dashboard = () => {
             <div className="applications-grid">
               <div className="stat-card">
                 <h3>Total Applications</h3>
-                <p className="stat-number">{appliedJobs.length}</p>
+                <p className="stat-number">{appliedJobs.totalJobs || 0}</p>
               </div>
               <div className="stat-card">
                 <h3>Under Review</h3>
                 <p className="stat-number">
-                  {appliedJobs.filter(job => job.status === 'under-review').length}
+                  {appliedJobs.pending || 0}
                 </p>
               </div>
               <div className="stat-card">
                 <h3>Interviews</h3>
                 <p className="stat-number">
-                  {appliedJobs.filter(job => job.status === 'interview').length}
+                  {appliedJobs.interviews || 0}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Recent Jobs Section */}
-          <div className="dashboard-section jobs-section">
+          <div className="dashboard-section">
             <div className="section-header">
               <h2>Recent Job Opportunities</h2>
               <button className="view-all-btn" onClick={() => navigate('/jobs')}>
@@ -194,11 +192,11 @@ const Dashboard = () => {
                   </div>
                   <div className="job-card-footer">
                     <button
-                      className={`apply-btn ${appliedJobs.some(aj => aj._id === job._id) ? 'applied' : ''}`}
+                      className={`apply-btn ${job.hasApplied ? 'applied' : ''}`}
                       onClick={() => handleApply(job._id)}
-                      disabled={appliedJobs.some(aj => aj._id === job._id)}
+                      disabled={job.hasApplied}
                     >
-                      {appliedJobs.some(aj => aj._id === job._id) ? '✓ Applied' : 'Apply Now'}
+                      {job.hasApplied ? '✓ Applied' : 'Apply Now'}
                     </button>
                   </div>
                 </div>

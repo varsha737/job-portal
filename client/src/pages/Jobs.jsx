@@ -17,7 +17,7 @@ const Jobs = () => {
 
     const fetchJobs = async () => {
         try {
-            const res = await axios.get("/job/get-job");
+            const res = await axios.get("/job/jobs");
             if (res.data && Array.isArray(res.data.jobs)) {
                 // Sort jobs by creation date (newest first)
                 const sortedJobs = res.data.jobs.sort((a, b) =>
@@ -50,19 +50,23 @@ const Jobs = () => {
                 return;
             }
 
-            const response = await axios.patch(`/job/apply-job/${jobId}`);
+            const response = await axios.post(`/job/apply-job/${jobId}`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
             if (response.data.success) {
                 toast.success('Successfully applied for the job!');
-                // Redirect to dashboard after successful application
-                navigate('/dashboard');
+                // Refresh the jobs list to update the status
+                fetchJobs();
             } else {
                 toast.error(response.data.message || 'Failed to apply for the job');
             }
         } catch (error) {
             console.error("Failed to apply for job:", error.response?.data || error.message);
             if (error.response?.status === 401) {
-                toast.error('Session expired. Please login again');
+                toast.error('Please login as a job seeker to apply');
                 navigate('/login');
             } else {
                 toast.error(error.response?.data?.message || "Failed to apply for the job");

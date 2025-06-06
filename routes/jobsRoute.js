@@ -22,21 +22,20 @@ const router = express.Router();
 router.get("/jobs", getAllJobsController);
 router.get("/get-job/:id", getJobById);
 
-// Protected routes
+// Protected routes - require authentication
 router.use(userAuth);
 
-// Recruiter routes
-router.use(checkRole('recruiter', 'admin'));
-router.get("/recruiter-analytics", getRecruiterAnalytics);
-router.get("/recruiter-jobs", getRecruiterJobs);
-router.post("/create-job", createJobController);
-router.patch("/update-job/:id", updateJobController);
-router.delete("/delete-job/:id", deleteJobController);
-router.patch("/update-status/:id", updateJobStatus);
-router.post("/schedule-interview", scheduleInterview);
-
 // Job seeker routes
-router.post("/apply-job/:id", checkRole('candidate'), applyJobController);
-router.get("/job-stats", checkRole('candidate'), getJobStats);
+router.post("/apply-job/:id", checkRole('jobseeker'), applyJobController);
+router.get("/job-stats", checkRole('jobseeker'), getJobStats);
+
+// Recruiter routes
+router.get("/recruiter-analytics", checkRole('recruiter', 'admin'), getRecruiterAnalytics);
+router.get("/recruiter-jobs", checkRole('recruiter', 'admin'), getRecruiterJobs);
+router.post("/create-job", checkRole('recruiter', 'admin'), createJobController);
+router.patch("/update-job/:id", checkRole('recruiter', 'admin'), updateJobController);
+router.delete("/delete-job/:id", checkRole('recruiter', 'admin'), deleteJobController);
+router.patch("/update-status/:id", checkRole('recruiter', 'admin'), updateJobStatus);
+router.post("/schedule-interview", checkRole('recruiter', 'admin'), scheduleInterview);
 
 export default router;
